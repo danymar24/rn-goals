@@ -1,4 +1,4 @@
-import { gql, useQuery } from '@apollo/client';
+import { gql, useMutation, useQuery } from '@apollo/client';
 import React, { useState } from 'react';
 import { ActivityIndicator, Button, FlatList, StyleSheet, Text, View } from 'react-native';
 import GoalInput from '../components/GoalInput';
@@ -13,24 +13,41 @@ const GET_GOALS = gql`
   }
 `;
 
+const ADD_GOAL = gql`
+  mutation($goal: String) {
+    addGoal(goal: $goal) {
+      goal 
+    }
+  }
+`;
+
 const Dashboard = (props: any) => {
-  const {loading, error, data} = useQuery<any>(GET_GOALS);
-  const goalsList = data?.goals;
+  const {loading: loadingGoals, error: errorLoadingGoals, data: goalsResponse} = useQuery<any>(GET_GOALS);
+  const [addGoal, {data: addedGoal, loading: addingGoal, error: errorAddingGoal}] = useMutation(ADD_GOAL, {
+    refetchQueries: [ GET_GOALS ]
+  });
+  const goalsList = goalsResponse?.goals;
   const [modalState, setModalState] = useState<boolean>(false);
-  console.log('loading', loading);
-  console.log('goals', goalsList);
-  if (loading) return (
+
+  if (addingGoal) return (
+    <Text>Submitting...</Text>
+  );
+  if (errorAddingGoal) return (
+    <Text>{`Submission error! ${errorAddingGoal.message}`}</Text>
+  );
+
+  if (loadingGoals || addingGoal) return (
     <ActivityIndicator size="large" />
   );
 
-  if (error) return (
-    <Text>`Error! ${error.message}`</Text>
+  if (errorLoadingGoals) return (
+    <Text>{`Error! ${errorLoadingGoals.message}`}</Text>
   );
 
   const addGoalHandler = (goal: string) => {
     if(!!goal) {
       setModalState(false);
-      // setGoalsList((currentGoals: any[]) => [...currentGoals, {key: Math.random().toString(), goal}]);
+      addGoal({variables: {goal}})
     }
   }
 
