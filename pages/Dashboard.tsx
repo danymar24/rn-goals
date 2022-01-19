@@ -14,16 +14,26 @@ const GET_GOALS = gql`
 `;
 
 const ADD_GOAL = gql`
-  mutation($goal: String) {
+  mutation AddGoal($goal: String) {
     addGoal(goal: $goal) {
-      goal 
+      key
+      goal
     }
+  }
+`;
+
+const REMOVE_GOAL = gql`
+  mutation DeleteGoal($key: String) {
+    deleteGoal(key: $key)
   }
 `;
 
 const Dashboard = (props: any) => {
   const {loading: loadingGoals, error: errorLoadingGoals, data: goalsResponse} = useQuery<any>(GET_GOALS);
   const [addGoal, {data: addedGoal, loading: addingGoal, error: errorAddingGoal}] = useMutation(ADD_GOAL, {
+    refetchQueries: [ GET_GOALS ]
+  });
+  const [removeGoal, {data: removedGoal, loading: removingGoal, error: errorRemovingGoal }] = useMutation(REMOVE_GOAL, {
     refetchQueries: [ GET_GOALS ]
   });
   const goalsList = goalsResponse?.goals;
@@ -36,8 +46,8 @@ const Dashboard = (props: any) => {
     <Text>{`Submission error! ${errorAddingGoal.message}`}</Text>
   );
 
-  if (loadingGoals || addingGoal) return (
-    <ActivityIndicator size="large" />
+  if (loadingGoals || addingGoal || removingGoal) return (
+    <ActivityIndicator style={styles.loading} size="large" />
   );
 
   if (errorLoadingGoals) return (
@@ -51,8 +61,10 @@ const Dashboard = (props: any) => {
     }
   }
 
-  const onDeleteHandler = (goalKey: any) => {
-    // setGoalsList((currentGoals: any[]) => currentGoals.filter((item) => item.key !== goalKey));
+  const onDeleteHandler = (key: string) => {
+    if(!!key) {
+      removeGoal({variables: {key}});
+    }
   }
 
   const onCloseModalHandler = () => {
@@ -78,4 +90,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 50
   },
+  loading: {
+    flex: 1
+  }
 });
