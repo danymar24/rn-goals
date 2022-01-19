@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { Button, Modal, StyleSheet, TextInput, View } from 'react-native';
 
+/**
+ * Component used to display the add goal modal
+ * 
+ * @param props: any
+ * @returns JSX containing the modal, the input and the action buttons
+ */
 const GoalInput = (props: any) => {
 
   const [enteredGoal, setEnteredGoal] = useState<string>('');

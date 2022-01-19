@@ -1,34 +1,29 @@
 import { gql, useMutation, useQuery } from '@apollo/client';
 import React, { useState } from 'react';
 import { ActivityIndicator, Button, FlatList, StyleSheet, Text, View } from 'react-native';
+
+/**
+ * Required components
+ */
 import GoalInput from '../components/GoalInput';
 import GoalItem from '../components/GoalItem';
+import ErrorReceived from '../components/ErrorReceived';
 
-const GET_GOALS = gql`
-  query Goals {
-    goals {
-      key
-      goal
-    }
-  }
-`;
+/**
+ * Graphql queries and mutations
+ */
+import ADD_GOAL from '../graphql/AddGoal';
+import GET_GOALS from '../graphql/GetGoals';
+import REMOVE_GOAL from '../graphql/RemoveGoal';
 
-const ADD_GOAL = gql`
-  mutation AddGoal($goal: String) {
-    addGoal(goal: $goal) {
-      key
-      goal
-    }
-  }
-`;
-
-const REMOVE_GOAL = gql`
-  mutation DeleteGoal($key: String) {
-    deleteGoal(key: $key)
-  }
-`;
-
+/**
+ * Displays the main page of the application
+ * 
+ * @param props: any
+ * @returns JSX - the page to load
+ */
 const Dashboard = (props: any) => {
+  const [modalState, setModalState] = useState<boolean>(false);
   const {loading: loadingGoals, error: errorLoadingGoals, data: goalsResponse} = useQuery<any>(GET_GOALS);
   const [addGoal, {data: addedGoal, loading: addingGoal, error: errorAddingGoal}] = useMutation(ADD_GOAL, {
     refetchQueries: [ GET_GOALS ]
@@ -37,22 +32,15 @@ const Dashboard = (props: any) => {
     refetchQueries: [ GET_GOALS ]
   });
   const goalsList = goalsResponse?.goals;
-  const [modalState, setModalState] = useState<boolean>(false);
-
-  if (addingGoal) return (
-    <Text>Submitting...</Text>
-  );
-  if (errorAddingGoal) return (
-    <Text>{`Submission error! ${errorAddingGoal.message}`}</Text>
-  );
 
   if (loadingGoals || addingGoal || removingGoal) return (
     <ActivityIndicator style={styles.loading} size="large" />
   );
 
-  if (errorLoadingGoals) return (
-    <Text>{`Error! ${errorLoadingGoals.message}`}</Text>
-  );
+  if(errorAddingGoal || errorLoadingGoals || errorRemovingGoal) {
+    const error = errorAddingGoal || errorLoadingGoals || errorRemovingGoal;
+    return <ErrorReceived error={error?.message}/>
+  }
 
   const addGoalHandler = (goal: string) => {
     if(!!goal) {
@@ -70,6 +58,7 @@ const Dashboard = (props: any) => {
   const onCloseModalHandler = () => {
     setModalState(false);
   }
+
   return (
     <View style={styles.container}>
       <View>
